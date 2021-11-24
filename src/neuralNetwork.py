@@ -39,6 +39,8 @@ class NeuralNetwork:
     self.deltaTheta = None 
     self.c1 = None
     self.c2 = None
+  def returnWeights(self):
+    print(self.W1)
 
   def initial_weights(self, X_train, Y_train):
      np.random.seed(1)
@@ -136,7 +138,8 @@ class NeuralNetwork:
     self.Z1 = Z1
     self.Z2 = Z2
     self.A1 = A1
-
+    # print(yhat)
+    # print("Forward LL", self.LL)
     return yhat, loss
 
   # def back_propagation(self, yhat):
@@ -224,22 +227,25 @@ class NeuralNetwork:
 
     # Adding Lizard for next iteration
     LL.append(LLikPlus1)
+    # print("Backward", self.LL)
 
   def fit(self, X, y):
     self.X = X
     self.y = y
     self.initial_weights(X, y)
+    # print("Initial", self.W1)
 
     for i in range(self.iterations):
       yhat, loss = self.forward_propagation()
       self.back_propagation(y, yhat)
       self.loss.append(loss)
+    # print("final", self.W1)
 
   def predict(self, X):
-    Z1 = X.dot(self.W1) + self.b1
+    Z1 = np.dot(X, self.W1) + self.b1
     A1 = self.relu(Z1)
-    Z2 = A1.dot(self.W2) + self.b2
-    pred = self.softmax(Z2)
+    Z2 = np.dot(A1, self.W2) + self.b2
+    pred = Z2
     return pred
 
   def acc(self, y, yhat):
