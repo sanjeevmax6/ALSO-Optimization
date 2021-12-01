@@ -30,5 +30,7 @@ Net = train(X_train, Y_train, X_test, Y_test)
 # print(X_test[0].shape)
 predicted = predict(Net, X_test[0])
 print(predicted)
+# print(Net.Tanh(-2))
 # acc = accuracy(Net, Y_test[0], predicted)
 # print(acc)
+
