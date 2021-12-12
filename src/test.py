@@ -25,6 +25,7 @@ g = -8
 h = -7
 i = -6
 
+global a1
 a1 = 10
 a2 = 11
 a3 = 12
@@ -35,5 +36,7 @@ sys2 = signal.StateSpace(f, g, h, i)
 output = signal.StateSpace(a1, a2, a3, a4)
 print("a1", a1)
 
-[m, n, o, p]= (sys1+sys2)*2
-print(m)
+output= (sys1+sys2)*2
+print("output", type(output))
+print(a1)
+

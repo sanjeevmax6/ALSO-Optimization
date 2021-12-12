@@ -38,9 +38,18 @@ class NeuralNetwork:
     self.Tau = None
     self.bodyAngle = None  # Thetaib(k)
     self.tailAngle = None  # Thetait(k)
+    self.derivativeBodyAngle = None # Theta . ib(k)
+    self.derivativeTailAngle = None # Theta . it(k)
     self.deltaTheta = None 
     self.c1 = None
     self.c2 = None
+    self.a = None
+    self.b = None
+    self.c = None
+    self.d = None
+    self.e = None
+    self.f = None
+    self.g = None
 
   def initial_weights(self, X_train, Y_train):
      np.random.seed(1)
@@ -81,7 +90,16 @@ class NeuralNetwork:
      self.q = np.random.rand(numberOfLizards, 1)
      self.Tau = np.random.rand(numberOfLizards, 1)
      self.bodyAngle = random.randint(-45, 45)
+     self.derivativeBodyAngle = random.randint(-10, 10)
      self.tailAngle = random.randint(-90, 90)
+     self.derivativeTailAngle = random.randint(10, 10)
+     self.a = np.sin((2*self.bodyAngle) - self.tailAngle)
+     self.b = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
+     self.c = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
+     self.d = np.square(np.cos(self.bodyAngle - self.tailAngle))
+     self.e = 1
+     self.f = 56 - (9*(np.cos(self.bodyAngle - self.tailAngle)))
+     self.g = 11 - (2*(np.cos(self.bodyAngle - self.tailAngle)))
      self.deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
      self.c1 = 1
      self.c2 = 1
@@ -217,6 +235,32 @@ class NeuralNetwork:
     for i in range(numberOfLizards):
       LLikPlus1.append([self.LL[i][0] + (self.Tau[i]*0.3*self.deltaTheta) + (self.c1*(random.uniform(0, 1))*(self.Lbest[0] - self.LL[i][0])) + (self.c2*(random.uniform(0, 1))*(self.Gbest[0] - self.LL[i][0])), self.LL[i][1]])
     
+    # Updating body angle, derivative of body angle, tail angle, derivative of tail angle for next iteration
+    fThetai = np.array([(self.derivativeBodyAngle), ((np.square(self.derivativeBodyAngle) - self.b)/(self.d - self.e)), (self.derivativeTailAngle), ((-np.square(self.derivativeTailAngle) + self.c)/(self.d - self.e))])
+    fThetai = np.reshape(fThetai, (4, 1))
+    
+    gThetai = np.array([(0), ((-self.f)/(self.d - self.e)), (0), ((self.g)/(self.d - self.e))])
+    gThetai = np.reshape(gThetai, (4, 1))
+
+    updatedParameters = []
+    for Taui in self.Tau:
+      updatedParameters.append(fThetai + (gThetai*Taui))
+    
+    tempBodyAngle = 0
+    tempDerivativeBodyAngle = 0
+    tempTailAngle = 0
+    tempDerivativeTailAngle = 0
+    for parameters in updatedParameters:
+      tempBodyAngle  += parameters[0]
+      tempDerivativeBodyAngle += parameters[1]
+      tempTailAngle += parameters[2]
+      tempDerivativeTailAngle += parameters[3]
+
+    self.bodyAngle = tempBodyAngle/len(updatedParameters)
+    self.derivativeBodyAngle = tempDerivativeBodyAngle/len(updatedParameters)
+    self.tailAngle = tempTailAngle/len(updatedParameters)
+    self.derivativeTailAngle = tempDerivativeTailAngle/len(updatedParameters)
+
     # Appending Lizard for next iteration
     self.LL = LLikPlus1
 

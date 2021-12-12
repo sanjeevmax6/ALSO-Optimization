@@ -9,5 +9,5 @@ input_layer = 8
 hidden_layer = 7
 output_layer = 1
 learning_rate = 0.01
-iterations = 5
+iterations = 1
 numberOfLizards = 20
