@@ -22,7 +22,6 @@ def preProcess(cpu_data, memory_data, disk_data):
         
     data_train_index = 0
     data_test_index = 0
-    
     # scaler = MinMaxScaler(feature_range=(0, 1))
     for cpu in cpu_data:
         Y_eachRow = []

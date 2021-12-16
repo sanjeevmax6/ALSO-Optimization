@@ -2,6 +2,7 @@ import numpy as np
 import random
 import math
 import matplotlib.pyplot as plt
+from scipy import signal
 
 from constants import *
 
@@ -16,6 +17,7 @@ class NeuralNetwork:
     self.Z1 = None
     self.Z2 = None
     self.A1 = None
+    self.A2 = None
     self.learning_rate = learning_rate
     self.iterations = iterations
     self.loss = []
@@ -26,8 +28,8 @@ class NeuralNetwork:
     self.D = None
     self.LL = None
     self.LLi = None
-    self.BestBuffer = None
     self.Lbest = None
+    self.Lworst = None
     self.Gbest = None
     self.Gworst = None
     self.q = None
@@ -36,11 +38,18 @@ class NeuralNetwork:
     self.Tau = None
     self.bodyAngle = None  # Thetaib(k)
     self.tailAngle = None  # Thetait(k)
+    self.derivativeBodyAngle = None # Theta . ib(k)
+    self.derivativeTailAngle = None # Theta . it(k)
     self.deltaTheta = None 
     self.c1 = None
     self.c2 = None
-  def returnWeights(self):
-    print(self.W1)
+    self.a = None
+    self.b = None
+    self.c = None
+    self.d = None
+    self.e = None
+    self.f = None
+    self.g = None
 
   def initial_weights(self, X_train, Y_train):
      np.random.seed(1)
@@ -66,25 +75,43 @@ class NeuralNetwork:
      
      self.LLi = np.append(hid1, hid2)
      self.LLi = np.reshape(self.LLi, (1, self.D))
-     self.LL.append(self.LLi)
+     tempLLi = [self.LLi, np.random.randn(1, 1)]
+     self.LL.append(tempLLi)
+
+     for i in range(numberOfLizards-1):
+       tempLL = [np.random.randn(1, self.D), np.random.randn(1, 1)]
+       self.LL.append(tempLL)
 
      self.Fitness = np.zeros(shape=[1, 1])
-     self.BestBuffer = []
-     self.Lbest = []
-     self.Gbest =[]
-     self.Gworst = []
-     self.q = None
-     self.Tau = []
+     self.Lbest = self.LL[0]
+     self.Lworst = self.LL[0]
+     self.Gbest = self.LL[0]
+     self.Gworst = self.LL[0]
+     self.q = np.random.rand(numberOfLizards, 1)
+     self.Tau = np.random.rand(numberOfLizards, 1)
      self.bodyAngle = random.randint(-45, 45)
+     self.derivativeBodyAngle = random.randint(-10, 10)
      self.tailAngle = random.randint(-90, 90)
+     self.derivativeTailAngle = random.randint(10, 10)
+     self.a = np.sin((2*self.bodyAngle) - self.tailAngle)
+     self.b = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
+     self.c = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
+     self.d = np.square(np.cos(self.bodyAngle - self.tailAngle))
+     self.e = 1
+     self.f = 56 - (9*(np.cos(self.bodyAngle - self.tailAngle)))
+     self.g = 11 - (2*(np.cos(self.bodyAngle - self.tailAngle)))
      self.deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
      self.c1 = 1
      self.c2 = 1
      self.firstBoolLL = True
      self.firstBoolFitness = True
 
-  def relu(self, Z):
-    return np.maximum(0,Z)
+  def Tanh(self, Z):
+    activated = np.tanh(Z)
+    return np.absolute(activated)
+    # activated[activated < 0] = activated + 1
+    # return activated
+    
 
   def softmax(self, Z):
     return np.exp(Z) / np.sum(np.exp(Z), axis=0)
@@ -107,40 +134,45 @@ class NeuralNetwork:
     return loss
 
   def forward_propagation(self):
-    # print(self.LL[-1])
-    temp = self.LL[-1]
+    yhat = []
+    for lizard in self.LL:
+      hid1 = lizard[0][:, :63]
+      hid2 = lizard[0][:, 63:]
+      
+      W1 = hid1[:, :56]
+      b1 = hid1[:, 56:]
+      
+      W2 = hid2[:, :7]
+      b2 = hid2[:, 7:]
 
-    hid1 = temp[:, :63]
-    hid2 = temp[:, 63:]
+      W1 = np.reshape(W1, (8, 7))
+      b1 = np.reshape(b1, (7, ))
+      W2 = np.reshape(W2, (7, 1))
+      b2 = np.reshape(b2, (1, ))
 
-    W1 = hid1[:, :56]
-    b1 = hid1[:, 56:]
+      # self.W1 = W1
+      # self.b1 = b1
+      # self.W2 = W2
+      # self.b2 = b2
 
-    W2 = hid2[:, :7]
-    b2 = hid2[:, 7:]
+      Z1 = np.dot(self.X, W1) + b1
+      A1 = self.Tanh(Z1)
+      Z2 = np.dot(A1, W2) + b2
+      A2 = self.Tanh(Z2)
 
-    W1 = np.reshape(W1, (8, 7))
-    b1 = np.reshape(b1, (7, ))
-    W2 = np.reshape(W2, (7, 1))
-    b2 = np.reshape(b2, (1, ))
-
+      yhat.append(A2)
+    
     self.W1 = W1
     self.b1 = b1
     self.W2 = W2
     self.b2 = b2
 
-    Z1 = np.dot(self.X, self.W1) + self.b1
-    A1 = self.relu(Z1)
-    Z2 = np.dot(A1, self.W2) + self.b2
-    yhat = Z2
-    # print(Z2)
-    loss = self.entropy_loss(self.y, yhat)
     self.Z1 = Z1
-    self.Z2 = Z2
     self.A1 = A1
-    # print(yhat)
-    # print("Forward LL", self.LL)
-    return yhat, loss
+    self.Z2 = Z2
+    self.A2 = A2
+
+    return yhat
 
   # def back_propagation(self, yhat):
   def back_propagation(self, Y_train, yhat):
@@ -149,85 +181,88 @@ class NeuralNetwork:
     W2 = self.W2
     b1 = self.b1
     b2 = self.b2
-    LL = self.LL
-    Fitness = self.Fitness
-    BestBuffer = self.BestBuffer
-    firstBoolLL = self.firstBoolLL
-    firstBoolFitness = self.firstBoolFitness
-    Lbest = self.Lbest
-    Gbest = self.Gbest
-    Gworst = self.Gworst
-    q = self.q
-    Tau = self.Tau
-    bodyAngle = self.bodyAngle
-    tailAngle = self.tailAngle
-    deltaTheta = self.deltaTheta
-    c1 = self.c1
-    c2 = self.c2
+
     
     # Calculating Fitness Function for each Lizard Li, using RSME
-    temp = Y_train[0] - yhat
-    temp = np.square(temp)
-    tempo = np.nansum(temp, axis=0)
-    Fitnessi = np.sqrt(tempo)
-
-    if firstBoolFitness:
-      Fitness[0] = Fitnessi
-      firstBoolFitness = False
-    else:
-      Fitness = np.append(Fitness, Fitnessi, axis=0)
+    for i in range(numberOfLizards):
+      temp = Y_train[0] - yhat[i]
+      temp = np.square(temp)
+      tempo = np.nansum(temp, axis=0)
+      self.LL[i][1] = tempo
     
-    # Allocating Lbest, Gbest and Gworst
-    # BestBuffer.append([LLi, Fitnessi])
+    # Allocating Lbest, Lworst7g Gbest and Gworst
+    
+    #Local Best and Local Worst
+    FitnessLbest = self.LL[0][1]
+    FitnessLWorst = self.LL[0][1]
 
-    #Local Best
-    if not Lbest:
-      Lbest = [LL[-1], Fitnessi]
-    else:
-      if Lbest[1] > Fitnessi:
-        Lbest = [LL[-1], Fitnessi]
+    for lizard in self.LL:
+      if lizard[1] < FitnessLbest:
+        self.Lbest = lizard
+        FitnessLbest = lizard[1]
+      if lizard[1] > FitnessLWorst:
+        self.Lworst = lizard
+        FitnessLWorst = lizard[1]
     
     #Global Best
-    if not Gbest:
-      Gbest = [LL[-1], Fitnessi]
-    else:
-      if Gbest[1] > Fitnessi:
-        Gbest = [LL[-1], Fitnessi]
+    if self.Gbest[1] > self.Lbest[1]:
+      self.Gbest = self.Lbest
     
     #Global Worst
-    if not Gworst:
-      Gworst = [LL[-1], Fitnessi]
-    else:
-      if Gworst[1] < Fitnessi:
-        Gworst = [LL[-1], Fitnessi]
+    if self.Gworst[1] < self.Lworst[1]:
+      self.Gworst = self.Lworst
     
     #Computing q
-    if not q:
-      q = 1
+    # print(Tau)
+    # print(q)
 
-    if not Tau:
-      Tau.append(1)
+    for i in range(numberOfLizards):
+      comparison = self.LL[i][0] == self.Lbest[0]
+      isEqual = comparison.all()
+      if not isEqual:
+        self.q[i] = (self.Gbest[1] - self.LL[i][1])/(self.Gbest[1] - self.Gworst[1])
+      else:
+        self.q[i] = self.Tau[i]
     
-    if Fitnessi == Lbest[1]:
-      q = Tau[0]
-    else:
-      q = (Gbest[1] - Fitnessi)/(Gbest[1] - Gworst[1])
-    
-    if len(Tau) == 1:
-      Tau.append(random.uniform(0, q))
-    else:
-      Tau[0] = Tau[1]
-      Tau[1] = random.uniform(0, q)
+    for i in range(numberOfLizards):
+      self.Tau[i] = random.uniform(0, self.q[i])
     
     #Computing Delta Theta
-    deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
+    self.deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
 
     # Updating Lizard
-    LLikPlus1 = LL[-1] + (Tau[1]*0.3*deltaTheta) + (c1*(random.uniform(0, 1))*(Lbest[0] - LL[-1])) + (c2*(random.uniform(0, 1))*(Gbest[0] - LL[-1]))
+    LLikPlus1 = []
+    for i in range(numberOfLizards):
+      LLikPlus1.append([self.LL[i][0] + (self.Tau[i]*0.3*self.deltaTheta) + (self.c1*(random.uniform(0, 1))*(self.Lbest[0] - self.LL[i][0])) + (self.c2*(random.uniform(0, 1))*(self.Gbest[0] - self.LL[i][0])), self.LL[i][1]])
+    
+    # Updating body angle, derivative of body angle, tail angle, derivative of tail angle for next iteration
+    fThetai = np.array([(self.derivativeBodyAngle), ((np.square(self.derivativeBodyAngle) - self.b)/(self.d - self.e)), (self.derivativeTailAngle), ((-np.square(self.derivativeTailAngle) + self.c)/(self.d - self.e))])
+    fThetai = np.reshape(fThetai, (4, 1))
+    
+    gThetai = np.array([(0), ((-self.f)/(self.d - self.e)), (0), ((self.g)/(self.d - self.e))])
+    gThetai = np.reshape(gThetai, (4, 1))
 
-    # Adding Lizard for next iteration
-    LL.append(LLikPlus1)
-    # print("Backward", self.LL)
+    updatedParameters = []
+    for Taui in self.Tau:
+      updatedParameters.append(fThetai + (gThetai*Taui))
+    
+    tempBodyAngle = 0
+    tempDerivativeBodyAngle = 0
+    tempTailAngle = 0
+    tempDerivativeTailAngle = 0
+    for parameters in updatedParameters:
+      tempBodyAngle  += parameters[0]
+      tempDerivativeBodyAngle += parameters[1]
+      tempTailAngle += parameters[2]
+      tempDerivativeTailAngle += parameters[3]
+
+    self.bodyAngle = tempBodyAngle/len(updatedParameters)
+    self.derivativeBodyAngle = tempDerivativeBodyAngle/len(updatedParameters)
+    self.tailAngle = tempTailAngle/len(updatedParameters)
+    self.derivativeTailAngle = tempDerivativeTailAngle/len(updatedParameters)
+
+    # Appending Lizard for next iteration
+    self.LL = LLikPlus1
 
   def fit(self, X, y):
     self.X = X
@@ -236,16 +271,16 @@ class NeuralNetwork:
     # print("Initial", self.W1)
 
     for i in range(self.iterations):
-      yhat, loss = self.forward_propagation()
+      yhat = self.forward_propagation()
       self.back_propagation(y, yhat)
-      self.loss.append(loss)
     # print("final", self.W1)
 
   def predict(self, X):
     Z1 = np.dot(X, self.W1) + self.b1
-    A1 = self.relu(Z1)
+    A1 = self.Tanh(Z1)
     Z2 = np.dot(A1, self.W2) + self.b2
-    pred = Z2
+    A2 = self.Tanh(Z2)
+    pred = A2
     return pred
 
   def acc(self, y, yhat):
@@ -259,6 +294,4 @@ class NeuralNetwork:
     plt.title("Loss curve for tr|aining")
     plt.show() 
 
-  def printing(self):
-    print(self.W1)
 
