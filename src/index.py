@@ -1,3 +1,4 @@
+from random import randrange
 from dataImport import *
 from preProcessing import *
 from neuralNetwork import *
@@ -41,13 +42,21 @@ m = 0
 for i in range(len(yhat)):
     X_coordinates.append(np.array([m]))
     m += 1
+Y_coordinates = []
 
-Y_test_coordinates = Y_test[0].tolist()
-yhat_coordiantes = yhat.tolist()
+for i in range(len(yhat)):
+    Y_coordinates.append(np.array([float(yhat[i][0])]))
+    # print(yhat[i][0], "-", Y_test[0][i])
 
-plt.scatter(X_coordinates, Y_test_coordinates, color='red', label='Y test') # Red color signifies Y test, actual values
-plt.scatter(X_coordinates, yhat_coordiantes, color='blue', label='Y predicted') # Blue color signifies Y hat, predicted values
-plt.show()
+line1, = plt.plot(X_coordinates, Y_test[0], color='red' , label='Y test', linewidth=1.0) # Red color signifies Y test, actual values
+# plt.scatter(X_coordinates, yhat_coordiantes, color='blue', label='Y predicted') # Blue color signifies Y hat, predicted values
+line2, = plt.plot(X_coordinates, Y_coordinates, color='blue' , label='Y predicted', linewidth=1.0)
+leg = plt.legend(loc='upper center')
+plt.xlabel("index of values")
+plt.ylabel("Y predicted & Y actual")
+plt.savefig('1000_iterations.png')
+# plt.show()
+
 
 # plt.hist(yhat, facecolor = 'orangered', edgecolor='maroon', bins = 8)
 # plt.show()

@@ -3,6 +3,7 @@ import random
 import math
 import matplotlib.pyplot as plt
 from scipy import signal
+import time
 
 from constants import *
 
@@ -89,18 +90,36 @@ class NeuralNetwork:
      self.Gworst = self.LL[0]
      self.q = np.random.rand(numberOfLizards, 1)
      self.Tau = np.random.rand(numberOfLizards, 1)
-     self.bodyAngle = random.randint(-45, 45)
-     self.derivativeBodyAngle = random.randint(-10, 10)
-     self.tailAngle = random.randint(-90, 90)
-     self.derivativeTailAngle = random.randint(10, 10)
-     self.a = np.sin((2*self.bodyAngle) - self.tailAngle)
-     self.b = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
-     self.c = np.square(self.derivativeTailAngle)*(np.sin(self.bodyAngle - self.tailAngle))
-     self.d = np.square(np.cos(self.bodyAngle - self.tailAngle))
+     self.bodyAngle = []
+     self.derivativeBodyAngle = []
+     self.tailAngle = []
+     self.derivativeTailAngle = []
+
+     for i in range(numberOfLizards):
+       self.bodyAngle.append(float(random.randint(-45, 45)))
+       self.derivativeBodyAngle.append(float(random.randint(-10, 10)))
+       self.tailAngle.append(float(random.randint(-90, 90)))
+       self.derivativeTailAngle.append(float(random.randint(10, 10)))
+      
+     self.a = []
+     self.b = []
+     self.c = []
+     self.d = []
      self.e = 1
-     self.f = 56 - (9*(np.cos(self.bodyAngle - self.tailAngle)))
-     self.g = 11 - (2*(np.cos(self.bodyAngle - self.tailAngle)))
-     self.deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
+     self.f = []
+     self.g = []
+     self.deltaTheta = []
+     for i in range(numberOfLizards):
+       self.a.append(np.sin((2*self.bodyAngle[i]) - self.tailAngle[i]))
+       self.b.append(np.square(self.derivativeTailAngle[i])*(np.sin(self.bodyAngle[i] - self.tailAngle[i])))
+       self.c.append(np.square(self.derivativeTailAngle[i])*(np.sin(self.bodyAngle[i] - self.tailAngle[i])))
+       self.d.append(np.square(np.cos(self.bodyAngle[i] - self.tailAngle[i])))
+       
+       self.f.append(56 - (9*(np.cos(self.bodyAngle[i] - self.tailAngle[i]))))
+       self.g.append(11 - (2*(np.cos(self.bodyAngle[i] - self.tailAngle[i]))))
+       
+       self.deltaTheta.append((self.bodyAngle[i] - self.tailAngle[i])*(math.pi/180))
+    #  print("d",self.d)
      self.c1 = 1
      self.c2 = 1
      self.firstBoolLL = True
@@ -226,40 +245,68 @@ class NeuralNetwork:
     
     for i in range(numberOfLizards):
       self.Tau[i] = random.uniform(0, self.q[i])
-    
-    #Computing Delta Theta
-    self.deltaTheta = (self.bodyAngle - self.tailAngle)*(math.pi/180)
 
     # Updating Lizard
     LLikPlus1 = []
     for i in range(numberOfLizards):
-      LLikPlus1.append([self.LL[i][0] + (self.Tau[i]*0.3*self.deltaTheta) + (self.c1*(random.uniform(0, 1))*(self.Lbest[0] - self.LL[i][0])) + (self.c2*(random.uniform(0, 1))*(self.Gbest[0] - self.LL[i][0])), self.LL[i][1]])
+      LLikPlus1.append([self.LL[i][0] + (self.Tau[i]*0.3*self.deltaTheta[i]) + (self.c1*(random.uniform(0, 1))*(self.Lbest[0] - self.LL[i][0])) + (self.c2*(random.uniform(0, 1))*(self.Gbest[0] - self.LL[i][0])), self.LL[i][1]])
     
-    # Updating body angle, derivative of body angle, tail angle, derivative of tail angle for next iteration
-    fThetai = np.array([(self.derivativeBodyAngle), ((np.square(self.derivativeBodyAngle) - self.b)/(self.d - self.e)), (self.derivativeTailAngle), ((-np.square(self.derivativeTailAngle) + self.c)/(self.d - self.e))])
-    fThetai = np.reshape(fThetai, (4, 1))
-    
-    gThetai = np.array([(0), ((-self.f)/(self.d - self.e)), (0), ((self.g)/(self.d - self.e))])
-    gThetai = np.reshape(gThetai, (4, 1))
-
+    #Updating body angle, derivative of body angle, tail angle, derivative of tail angle for next iteration
     updatedParameters = []
-    for Taui in self.Tau:
-      updatedParameters.append(fThetai + (gThetai*Taui))
-    
-    tempBodyAngle = 0
-    tempDerivativeBodyAngle = 0
-    tempTailAngle = 0
-    tempDerivativeTailAngle = 0
-    for parameters in updatedParameters:
-      tempBodyAngle  += parameters[0]
-      tempDerivativeBodyAngle += parameters[1]
-      tempTailAngle += parameters[2]
-      tempDerivativeTailAngle += parameters[3]
 
-    self.bodyAngle = tempBodyAngle/len(updatedParameters)
-    self.derivativeBodyAngle = tempDerivativeBodyAngle/len(updatedParameters)
-    self.tailAngle = tempTailAngle/len(updatedParameters)
-    self.derivativeTailAngle = tempDerivativeTailAngle/len(updatedParameters)
+    for i in range(numberOfLizards):
+      f1 = self.derivativeBodyAngle[i]
+      # print("start of iteration")
+      # print("derivative of body angle", self.derivativeBodyAngle[i])
+      f2 = ((self.derivativeBodyAngle[i]*self.derivativeBodyAngle[i]) - self.b[i])/(self.d[i] - self.e + epsilon)
+      f3 = self.derivativeTailAngle[i]
+      # print("derivative of tail angle",self.derivativeTailAngle)
+      f4 = (-(self.derivativeTailAngle[i]*self.derivativeTailAngle[i]) + self.c[i])/(self.d[i] - self.e + epsilon)
+      fThetai = np.array([f1, f2, f3, f4])
+      fThetai = np.reshape(fThetai, (4, 1))
+       
+      g1 = 0
+      g2 = (-self.f[i])/(self.d[i] - self.e + epsilon)
+      g3 = 0
+      g4 = (self.g[i])/(self.d[i] - self.e + epsilon)
+      gThetai = np.array([g1, g2, g3, g4])
+      gThetai = np.reshape(gThetai, (4, 1))
+
+      updatedParameters.append(fThetai + (gThetai*self.Tau[i]))
+      # print("ftheta", fThetai)
+      # print("gtheta", gThetai)
+      # print("Tau", self.Tau[i])
+
+    for i  in range(numberOfLizards):
+      self.bodyAngle[i]  = float(updatedParameters[i][0])
+      if(self.bodyAngle[i] > 45 or self.bodyAngle[i] <-45):
+        self.bodyAngle[i] = float(random.randint(-45, 45))
+
+      self.derivativeBodyAngle[i] = float(updatedParameters[i][1])
+      if(self.derivativeBodyAngle[i] > 10 or self.derivativeBodyAngle[i] < -10):
+        self.derivativeBodyAngle[i] = float(random.randint(-10, 10))
+
+      self.tailAngle[i] = float(updatedParameters[i][2])
+      if(self.tailAngle[i] > 45 or self.tailAngle[i] < -45):
+        self.tailAngle[i] = float(random.randint(-90, 90))
+
+      self.derivativeTailAngle[i] = float(updatedParameters[i][3])
+      if(self.derivativeTailAngle[i] > 10 or self.derivativeTailAngle[i] < -10):
+        self.derivativeTailAngle[i] = float(random.randint(-10, 10))
+    
+    #Updating Delta Theta
+    for i in range(numberOfLizards):
+      self.deltaTheta.append((self.bodyAngle[i] - self.tailAngle[i])*(math.pi/180))
+    
+    #Updating paramters a, b, c, d, f, g
+    for i in range(numberOfLizards):
+       self.a[i] = np.sin((2*self.bodyAngle[i]) - self.tailAngle[i])
+       self.b[i] = np.square(self.derivativeTailAngle[i])*(np.sin(self.bodyAngle[i] - self.tailAngle[i]))
+       self.c[i] = np.square(self.derivativeTailAngle[i])*(np.sin(self.bodyAngle[i] - self.tailAngle[i]))
+       self.d[i] = np.square(np.cos(self.bodyAngle[i] - self.tailAngle[i]))
+       
+       self.f[i] = 56 - (9*(np.cos(self.bodyAngle[i] - self.tailAngle[i])))
+       self.g[i] = 11 - (2*(np.cos(self.bodyAngle[i] - self.tailAngle[i])))
 
     # Appending Lizard for next iteration
     self.LL = LLikPlus1
@@ -271,6 +318,7 @@ class NeuralNetwork:
     # print("Initial", self.W1)
 
     for i in range(self.iterations):
+      print("iteration", i)
       yhat = self.forward_propagation()
       self.back_propagation(y, yhat)
     # print("final", self.W1)
