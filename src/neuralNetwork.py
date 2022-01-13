@@ -4,6 +4,7 @@ import math
 import matplotlib.pyplot as plt
 from scipy import signal
 import time
+from sklearn.metrics import mean_squared_error
 
 from constants import *
 
@@ -53,9 +54,6 @@ class NeuralNetwork:
     self.g = None
 
   def initial_weights(self, X_train, Y_train):
-     np.random.seed(1)
-     self.X = X_train[0]
-     self.y = Y_train[0]
      self.W1 = np.random.randn(self.layers[0], self.layers[1])
     #  print("W1 shape", self.W1.shape)
      self.b1 = np.random.randn(self.layers[1], )
@@ -65,7 +63,7 @@ class NeuralNetwork:
      self.b2 = np.random.randn(self.layers[2], )
     #  print("b2 shape", self.b2.shape)
      self.D = ( ((self.layers[0]+1)*self.layers[1]) + ((self.layers[1]+1)*self.layers[2]) )
-     self.LL = []
+     self.LL = [] 
 
      # Creating Lizards for first iteration
      hid1 = np.vstack([self.W1, self.b1])
@@ -155,19 +153,19 @@ class NeuralNetwork:
   def forward_propagation(self):
     yhat = []
     for lizard in self.LL:
-      hid1 = lizard[0][:, :63]
-      hid2 = lizard[0][:, 63:]
+      hid1 = lizard[0][:, :( (self.layers[0]+1)*self.layers[1] )]
+      hid2 = lizard[0][:, ( (self.layers[0]+1)*self.layers[1] ):]
       
-      W1 = hid1[:, :56]
-      b1 = hid1[:, 56:]
+      W1 = hid1[:, :(self.layers[0]*self.layers[1])]
+      b1 = hid1[:, (self.layers[0]*self.layers[1]):]
       
-      W2 = hid2[:, :7]
-      b2 = hid2[:, 7:]
+      W2 = hid2[:, :self.layers[1]]
+      b2 = hid2[:, self.layers[1]:]
 
-      W1 = np.reshape(W1, (8, 7))
-      b1 = np.reshape(b1, (7, ))
-      W2 = np.reshape(W2, (7, 1))
-      b2 = np.reshape(b2, (1, ))
+      W1 = np.reshape(W1, (self.layers[0], self.layers[1]))
+      b1 = np.reshape(b1, (self.layers[1], ))
+      W2 = np.reshape(W2, (self.layers[1], self.layers[2]))
+      b2 = np.reshape(b2, (self.layers[2], ))
 
       # self.W1 = W1
       # self.b1 = b1
@@ -310,6 +308,31 @@ class NeuralNetwork:
 
     # Appending Lizard for next iteration
     self.LL = LLikPlus1
+  
+  def unwrapWeights(self):
+    fitnessVal = self.LL[0][1]
+    fitnessPos = 0
+    # print(type(fitnessVal))
+    # print(type(self.LL[1][1]))
+    # print(fitnessVal < self.LL[1][1])
+    for i in range(numberOfLizards):
+      if fitnessVal > self.LL[i][1]:
+        fitnessVal = self.LL[i][1]
+        fitnessPos = i
+    
+    hid1 = self.LL[fitnessPos][0][:, :( (self.layers[0]+1)*self.layers[1] )]
+    hid2 = self.LL[fitnessPos][0][:, ( (self.layers[0]+1)*self.layers[1] ):]
+      
+    self.W1 = hid1[:, :(self.layers[0]*self.layers[1])]
+    self.b1 = hid1[:, (self.layers[0]*self.layers[1]):]
+      
+    self.W2 = hid2[:, :self.layers[1]]
+    self.b2 = hid2[:, self.layers[1]:]
+
+    self.W1 = np.reshape(self.W1, (self.layers[0], self.layers[1]))
+    self.b1 = np.reshape(self.b1, (self.layers[1], ))
+    self.W2 = np.reshape(self.W2, (self.layers[1], self.layers[2]))
+    self.b2 = np.reshape(self.b2, (self.layers[2], ))
 
   def fit(self, X, y):
     self.X = X
@@ -321,6 +344,7 @@ class NeuralNetwork:
       print("iteration", i)
       yhat = self.forward_propagation()
       self.back_propagation(y, yhat)
+    self.unwrapWeights()
     # print("final", self.W1)
 
   def predict(self, X):
@@ -332,8 +356,15 @@ class NeuralNetwork:
     return pred
 
   def acc(self, y, yhat):
-    acc = int(sum(y == yhat) / len(y) * 100)
-    return acc
+    acc = 0
+  
+    yCombined = np.concatenate((y, yhat), axis=1)
+    yCombined = yCombined[~(np.isnan(yCombined).any(axis=1))]
+    for i in range(yCombined.shape[0]):
+      acc += np.square(yCombined[i][0] - yCombined[0][1])
+    acc /= yCombined.shape[0]
+    # acc = np.average( np.square(y - yhat) )
+    return acc*100
   
   def plot_loss(self):
     plt.plot(self.loss)
