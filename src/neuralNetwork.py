@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy import signal
 import time
 from sklearn.metrics import mean_squared_error
+import pickle
 
 from constants import *
 
@@ -333,18 +334,37 @@ class NeuralNetwork:
     self.b1 = np.reshape(self.b1, (self.layers[1], ))
     self.W2 = np.reshape(self.W2, (self.layers[1], self.layers[2]))
     self.b2 = np.reshape(self.b2, (self.layers[2], ))
+  
+  def saveWeights(self):
+    np.save('W1.npy', self.W1)
+    np.save('b1.npy', self.b1)
+    np.save('W2.npy', self.W2)
+    np.save('b2.npy', self.b2)
+  
+  def loadWeights(self):
+    W1 = np.load('W1.npy')
+    b1 = np.load('b1.npy')
+    W2 = np.load('W2.npy')
+    b2 = np.load('b2.npy')
+    self.W1 = W1
+    self.b1 = b1
+    self.W2 = W2
+    self.b2 = b2
 
   def fit(self, X, y):
-    self.X = X
-    self.y = y
-    self.initial_weights(X, y)
+    self.initial_weights(X[0], y[0])
     # print("Initial", self.W1)
-
-    for i in range(self.iterations):
-      print("iteration", i)
-      yhat = self.forward_propagation()
-      self.back_propagation(y, yhat)
+    for j in range(8):
+      self.X = X[j]
+      self.y = y[j]
+      print("dataset", j )
+      for i in range(self.iterations):
+        print("iteration", i)
+        yhat = self.forward_propagation()
+        self.back_propagation(y[j], yhat)
+    
     self.unwrapWeights()
+    self.saveWeights()
     # print("final", self.W1)
 
   def predict(self, X):
@@ -365,6 +385,9 @@ class NeuralNetwork:
     acc /= yCombined.shape[0]
     # acc = np.average( np.square(y - yhat) )
     return acc*100
+    
+  def returnWeights(self):
+    return self.W1, self.b1, self.W2, self.b2
   
   def plot_loss(self):
     plt.plot(self.loss)

@@ -18,24 +18,16 @@ Network = NeuralNetwork()
 
 def train(X_train, Y_train, X_test, Y_test):
     csvFiles = [0, 1, 2, 3, 4, 5, 6, 7]
-    for i in range(8):
-        Network.fit(X_train[i], Y_train[i])
+    Network.fit(X_train, Y_train)
     return Network
-
-def validate(Network, data):
-    pred = Network.predict(data)
-    return pred
-
-def accuracy(Network, y, yhat):
-    accuracy = Network.acc(y, yhat)
-    return accuracy
 
 X_train, Y_train, X_test, Y_test, cpu_data_max, cpu_data_min = data()
 Net = train(X_train, Y_train, X_test, Y_test)
 
-with open("Neural_Network_500.pickle", "wb") as Neural_Network:
-    pickle.dump(Net, Neural_Network)
-    Neural_Network.close()
+
+# with open("Neural_Network_500.pickle", "wb") as Neural_Network:
+#     pickle.dump(Net, Neural_Network)
+#     Neural_Network.close()
 
 
 
