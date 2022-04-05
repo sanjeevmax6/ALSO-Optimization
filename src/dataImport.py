@@ -64,5 +64,5 @@ def importData():
         disk /= disk_data_max[i]
         i+=1
     # print((cpu_data[7] > 1).any())
-    return cpu_data, cpu_data_max, cpu_data_min, memory_data, disk_data
+    return cpu_data, cpu_data_max, cpu_data_min, memory_data, memory_data_max, memory_data_min, disk_data, disk_data_max, disk_data_min
 

@@ -1,3 +1,5 @@
+import itertools
+from typing import final
 import numpy as np
 import random
 import math
@@ -6,6 +8,7 @@ from scipy import signal
 import time
 from sklearn.metrics import mean_squared_error
 import pickle
+from itertools import combinations, chain
 
 from constants import *
 
@@ -151,7 +154,7 @@ class NeuralNetwork:
     loss = 1/nsample * (np.sum((y-yhat)*(y-yhat)))
     return loss
 
-  def forward_propagation(self):
+  def forward_propagation(self, xin):
     yhat = []
     for lizard in self.LL:
       hid1 = lizard[0][:, :( (self.layers[0]+1)*self.layers[1] )]
@@ -173,7 +176,7 @@ class NeuralNetwork:
       # self.W2 = W2
       # self.b2 = b2
 
-      Z1 = np.dot(self.X, W1) + b1
+      Z1 = np.dot(xin, W1) + b1
       A1 = self.Tanh(Z1)
       Z2 = np.dot(A1, W2) + b2
       A2 = self.Tanh(Z2)
@@ -351,21 +354,73 @@ class NeuralNetwork:
     self.W2 = W2
     self.b2 = b2
 
-  def fit(self, X, y):
-    self.initial_weights(X[0], y[0])
+  def fit(self, X, y, j):
+    self.initial_weights(X[j], y[j])
     # print("Initial", self.W1)
-    for j in range(8):
-      self.X = X[j]
-      self.y = y[j]
-      print("dataset", j )
-      for i in range(self.iterations):
-        print("iteration", i)
-        yhat = self.forward_propagation()
+    gbestIter = None
+    diff = 0
+    counter = 0
+    prevChange = True
+    i = 0
+    final_iter = []
+    # print(type(self.Gbest[1]))
+
+    # for j in permuted_arr:
+    #   self.X = X[j]
+    #   self.y = y[j]
+    #   # print("dataset", j )
+    #   # for i in range(self.iterations):
+
+
+
+    # for efficient iterations
+    # while(counter < 20):
+    #   print("iteration", i+1)
+    #   yhat = self.forward_propagation(X[j])
+    #   self.back_propagation(y[j], yhat)
+    #   if(gbestIter == None):
+    #     gbestIter = self.Gbest[1]
+    #   else:
+    #     diff = abs(gbestIter - self.Gbest[1])
+    #     gbestIter = self.Gbest[1]
+    #   # print("diff", diff)
+    #   if diff < 0.00000001:
+    #     if prevChange:
+    #       counter += 1
+    #       prevChange = True
+    #     else:
+    #       prevChange = True
+    #       counter = 0
+    #   else:
+    #     counter = 0
+    #     prevChange = False
+    #   i += 1
+
+    for i in range(self.iterations):
+        print("iteration", i+1)
+        yhat = self.forward_propagation(X[j])
         self.back_propagation(y[j], yhat)
+
+
+
+      # gbestIter = None
+      # diff = 0
+      # counter = 0
+      # prevChange = True
+      # iterations.append(i)
+      # i=0
+      
     
     self.unwrapWeights()
     self.saveWeights()
     # print("final", self.W1)
+    # print(iter_list)
+    # final_iter.append(permuted_arr)
+    #final_iter.append(i) #For efficient iterations, uncomment this !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    final_iter.append(self.iterations) # COmment this for efficient iterations !!!!!!!!!!!!!!!
+    final_iter.append(self.Gbest)
+    return final_iter
+    
 
   def predict(self, X):
     Z1 = np.dot(X, self.W1) + self.b1
@@ -375,7 +430,7 @@ class NeuralNetwork:
     pred = A2
     return pred
 
-  def acc(self, y, yhat):
+  def mseacc(self, y, yhat):
     acc = 0
   
     yCombined = np.concatenate((y, yhat), axis=1)
@@ -385,6 +440,29 @@ class NeuralNetwork:
     acc /= yCombined.shape[0]
     # acc = np.average( np.square(y - yhat) )
     return acc*100
+  
+  def maeacc(self, y, yhat):
+    acc = 0
+
+    yCombined = np.concatenate((y, yhat), axis=1)
+    yCombined = yCombined[~(np.isnan(yCombined).any(axis=1))]
+    for i in range(yCombined.shape[0]):
+      acc += np.absolute(yCombined[i][0] - yCombined[0][1])
+    acc /= yCombined.shape[0]
+    # acc = np.average( np.square(y - yhat) )
+    return acc*100
+
+  def rmseacc(self, y, yhat):
+    acc = 0
+  
+    yCombined = np.concatenate((y, yhat), axis=1)
+    yCombined = yCombined[~(np.isnan(yCombined).any(axis=1))]
+    for i in range(yCombined.shape[0]):
+      acc += np.square(yCombined[i][0] - yCombined[0][1])
+    acc /= yCombined.shape[0]
+    # acc = np.average( np.square(y - yhat) )
+    return np.sqrt(acc*100)
+
     
   def returnWeights(self):
     return self.W1, self.b1, self.W2, self.b2

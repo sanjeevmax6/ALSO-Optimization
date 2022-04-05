@@ -1,0 +1,63 @@
+Dataset 0
+Accuracy rmse
+0.33652998471528944
+Accuracy mae
+1.2351743942555977
+Accuracy mse
+0.11325243061247295
+
+Dataset 1
+Accuracy rmse
+0.8247960112917864
+Accuracy mae
+4.973355725187009
+Accuracy mse
+0.6802884602428405
+
+Dataset 2
+Accuracy rmse
+0.4643067879185634
+Accuracy mae
+2.179998775608263
+Accuracy mse
+0.2155807933072538
+
+Dataset 3
+Accuracy rmse
+0.4940360352282359
+Accuracy mae
+2.405494579762559
+Accuracy mse
+0.24407160410403478
+
+Dataset 4
+Accuracy rmse
+1.805014801327903
+Accuracy mae
+16.505607000846783
+Accuracy mse
+3.2580784330128094
+
+Dataset 5
+Accuracy rmse
+6.719245626474362
+Accuracy mae
+66.98022797706649
+Accuracy mse
+45.14826178889484
+
+Dataset 6
+Accuracy rmse
+0.8509188368377706
+Accuracy mae
+6.20267057745424
+Accuracy mse
+0.7240628668853444
+
+Dataset 7
+Accuracy rmse
+1.6279213237376
+Accuracy mae
+14.561846001100715
+Accuracy mse
+2.6501278362795797

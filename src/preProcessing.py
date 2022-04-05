@@ -16,14 +16,14 @@ def preProcess(cpu_data, memory_data, disk_data):
     train_test_index = []
     
     # print(len(cpu_data))
-    for cpu in cpu_data:
+    for cpu in memory_data:
         val = round((len(cpu) - startData)*trainTestSplitRatio)
         train_test_index.append(val)
         
     data_train_index = 0
     data_test_index = 0
     # scaler = MinMaxScaler(feature_range=(0, 1))
-    for cpu in cpu_data:
+    for cpu in memory_data:
         Y_eachRow = []
         for i in range(startData, train_test_index[data_train_index]):
             temp = np.array(cpu[i])
@@ -36,7 +36,7 @@ def preProcess(cpu_data, memory_data, disk_data):
         
     data_train_index = 0
     
-    for cpu in cpu_data:
+    for cpu in memory_data:
         X_eachRow = []
         for i in range(startData, train_test_index[data_train_index]):
             temp_Row = cpu.loc[:i].tail(numParameters+1)
@@ -50,7 +50,7 @@ def preProcess(cpu_data, memory_data, disk_data):
         data_train_index += 1
         X_train.append(X_eachRow)
     
-    for cpu in cpu_data:
+    for cpu in memory_data:
         Y_test_eachRow = []
         for i in range(train_test_index[data_test_index], len(cpu)):
             temp = np.array(cpu[i])
@@ -63,7 +63,7 @@ def preProcess(cpu_data, memory_data, disk_data):
         
     data_test_index = 0
     
-    for cpu in cpu_data:
+    for cpu in memory_data:
         X_test_eachRow = []
         for i in range(train_test_index[data_test_index], len(cpu)):
             temp_Row = cpu.loc[:i].tail(numParameters+1)

@@ -1,0 +1,15 @@
+Dataset 0
+Accuracy rmse
+0.18402027291929557
+Accuracy mae
+0.6149744102362493
+Accuracy mse
+0.03386346084529202
+
+Dataset 1
+Accuracy rmse
+0.2751313098110281
+Accuracy mae
+1.4855673848118356
+Accuracy mse
+0.07569723763833194
